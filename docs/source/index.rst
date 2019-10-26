@@ -1,18 +1,19 @@
-.. Sol documentation master file, created by
+.. sol documentation master file, created by
    sphinx-quickstart on Mon Feb 29 21:49:51 2016.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 .. image:: media/sol.png
 	:target: https://github.com/ThePhD/sol2
-	:alt: sol2 repository
+	:alt: sol repository
+	:align: center
 
-Sol |version|
+sol |version|
 =============
 *a fast, simple C++ and Lua Binding*
 
 
-When you need to hit the ground running with Lua and C++, `Sol`_ is the go-to framework for high-performance binding with an easy to use API.
+When you need to hit the ground running with Lua and C++, `sol`_ is the go-to framework for high-performance binding with an easy to use API.
 
 get going:
 ----------
@@ -39,9 +40,33 @@ get going:
 	exceptions
 	rtti
 	codecvt
-	cmake
+	build
 	licenses
 	origin
+
+
+connect
+--------
+
+Come to the Github Issues or the Discord! We've got a friendly community, and they can help you out or you can come just to talk about the things you are working on!
+
+|ds| |gh|
+
+
+support
+-------
+
+You can support the project and other related endeavors in various ways.
+
+|gs| |pa| |kf| |lp| |pp|  
+
+
+GitHub Sponsors is matching all sponsorships 100% and they also do not charge fees on either end of the transaction as well until sometime in June 2020. Still, you can support sol3 development by using any of the above. This is a time-consuming effort, so individuals who donate get to:
+
+- steer the direction and time spent on sol
+- get a role on the Discord server
+- get their name put up in the CONTRIBUTORS list
+- put something of their choice on sol3's README or the documentation's front page
 
 
 "I need feature X, maybe you have it?"
@@ -53,74 +78,62 @@ the basics:
 -----------
 
 .. note::
-	More examples can be found in the `examples directory`_
+	The code below *and* more examples can be found in the `examples directory`_.
 
 
-.. code-block:: c++
-	:caption: functions
+.. literalinclude:: ../../examples/source/docs/simple_functions.cpp
+	:name: simple-functions-example
 	:linenos:
 
-	#include <sol.hpp>
-	#include <cassert>
-
-	int main() {
-		sol::state lua;
-		int x = 0;
-		lua.set_function("beep", [&x]{ ++x; });
-		lua.script("beep()");
-		assert(x == 1);
-
-		sol::function beep = lua["beep"];
-		beep();
-		assert(x == 2);
-
-		return 0;
-	}
-
-
-.. code-block:: c++
-	:caption: linking C++ structures to Lua
+.. literalinclude:: ../../examples/source/docs/simple_structs.cpp
+	:name: simple-structs-example
 	:linenos:
 
-	#include <sol.hpp>
-	#include <cassert>
 
-	struct vars {
-		int boop = 0;
+Search
+======
 
-		int bop () const {
-			return boop + 1;
-		}
-	};
-
-	int main() {
-		sol::state lua;
-		lua.new_usertype<vars>("vars", 
-			"boop", &vars::boop
-			"bop", &vars::bop);
-		lua.script("beep = vars.new()\n"
-			"beep.boop = 1\n"
-			"bopvalue = beep:bop()");
-
-		vars& beep = lua["beep"];
-		int bopvalue = lua["bopvalue"];
-
-		assert(beep.boop == 1);
-		assert(lua.get<vars>("beep").boop == 1);
-		assert(beep.bop() == 2);
-		assert(bopvalue == 2);
-
-		return 0;
-	}			
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
 * :ref:`search`
 
 .. _Sol: https://github.com/ThePhD/sol2
 .. _issues: https://github.com/ThePhD/sol2/issues
 .. _examples directory: https://github.com/ThePhD/sol2/tree/develop/examples
+
+.. |pa| image:: media/become_a_patron_button.png
+	:height: 50
+	:target: https://www.patreon.com/thephd
+	:alt: sol3 Patreon
+	:align: middle
+	
+.. |kf| image:: media/Ko-fi_Blue.png
+	:height: 50
+	:target: https://ko-fi.com/thephd
+	:alt: sol3 ko-fi
+	:align: middle
+	
+.. |lp| image:: media/liberapay_logo.png
+	:height: 50
+	:target: https://liberapay.com/ThePhD/
+	:alt: sol3 ko-fi
+	:align: middle
+
+.. |pp| image:: media/pp_cc_mark_111x69.jpg
+	:height: 50
+	:target: https://www.paypal.me/LMeneide
+	:alt: sol3 PayPal
+	:align: middle
+
+.. |ds| image:: media/discord_logo_wordmark.png
+	:height: 75
+	:target: https://discord.gg/buxkYNT
+	:alt: sol3 Discord
+
+.. |gh| image:: media/github_logo.png
+	:height: 75
+	:target: https://github.com/ThePhD/sol2/issues
+	:alt: sol3 Github Issues Page
+
+.. |gs| image:: media/github_sponsors_logo.png
+	:height: 55
+	:target: https://github.com/users/ThePhD/sponsorship
+	:alt: sol3 Sponsors Page

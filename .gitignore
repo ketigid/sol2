@@ -1,3 +1,25 @@
+# # # # sol3
+# The MIT License (MIT)
+# 
+# Copyright (c) 2013-2019 Rapptz, ThePhD, and contributors
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 # Python (Bytecode)
 *.pyc
 
@@ -11,6 +33,8 @@
 Debug/
 Release/
 x64/
+x86/
+*.pyproj
 *.vcxproj
 *.vcxproj.filters
 *.tlog
@@ -24,12 +48,19 @@ x64/
 
 # CMake
 build/
+build-sol2/
 CMakeCache.txt
 CMakeFiles/
 
 # Compiler outputs
 obj/*
 bin/*
+main.exe
+main.o
+lua53.dll
+lua-5.3.4.dll
+main.ilk
+main.pdb
 
 # Dropbox interference
 .dropbox*
@@ -41,11 +72,13 @@ bin/*
 *.files
 *.includes
 
-# Scratchpad Files
-main2.cpp
-main.cpp
-
 # Local Lua Testbeds
+lua-5.4.0-cxx/
+lua-5.4.0/
+lua-5.4.0-work1-cxx/
+lua-5.4.0-work1/
+lua-5.3.4-cxx/
+lua-5.3.4/
 lua-5.3.2/
 lua-5.3.1/
 lua-5.3.0/
@@ -53,39 +86,41 @@ lua-5.2.4/
 lua-5.2.2/
 lua-5.2.3/
 lua-5.1.5/
+LuaJIT-2.1.0/
 luajit-2.0.5/
 luajit-2.0.3/
-include/
 liblua.a
 lib/liblua5.2.a
 
+# Docs Artefacts
+docs/build/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+
+# MacOS Garbage
+.DS_Store
+
 # Windows Crap
 desktop.ini
-*.sublime-workspace
-docs/build/
-*.sublime-project
-m.lua
-single/sol.hpp
 *.db
-lua53.dll
-main.exe
-main.o
-lua-5.3.4/
-main.lua
-LuaJIT-2.1.0/
-lua-5.3.4-cxx/
-lua-5.3.4.vcxproj-cxx.filters
-sol.pyproj
-lua-5.3.4.dll
-main.ilk
-main.pdb
-lua-5.3.4-cxx/
-lua-5.3.4/
-temp.bad_runtime.lua
-temp.bad_syntax.lua
-temp.good.lua
-catch_mock.hpp
-main_aux.cpp
-main.hpp
-tmp_thingy_user.lua
-tmp_thingy.lua
+
+# Miscellaneous
+external/
+scratch/
+vendor/
+.idea/
+cmake-build-debug/
+cmake-build-relwithdebinfo/
+cmake-build-release/
+/subprojects/*
+!/subprojects/*.wrap
+lua-5.3/
+lua-5.3-cxx/
+lua-5.4/
+LuaJIT-2.0/
+LuaJIT-2.1/
+lua-5.1/
+lua-5.2/

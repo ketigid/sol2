@@ -1,10 +1,14 @@
-std::(w/u16/u32)string support
-==============================
+unicode transformation format handling
+======================================
 because this is surprisingly hard using standard C++
 ----------------------------------------------------
 
-Individuals using Visual Studio 2015, or on Windows with the VC++ and MinGW compilers (possibly Clang++ on Windows as well) have ``<codecvt>`` headers, and thusly Sol will attempt to include it. Individuals on GCC 4.9.x, Clang 3.5.x, Clang 3.6.x do not seem to have ``<codecvt>`` shipped with the standard library that comes with installation of these compilers. If you want ``std::wstring``, ``std::u16string``, ``std::u32string`` automatic handling then you need to make sure you have those headers and then define ``SOL_CODECVT_SUPPORT`` on unsupported compilers.
+.. note::
 
-ThePhD did not want this to have to be a thing, but slow implementations and such force their hand. When GCC 7.x comes out, ThePhD will consider removing the effect of defining this macro and leaving <codecvt> support in at all times.
+	The ``<codecvt>`` header is no longer used and sol3 now converts utf8, utf16, and utf32 with internal routines. If you have a problem with the transcoding, please `file an issue report`_.
 
-GCC 7.x is now out, and its codecvt support seems to work in it as well. We will be deprecating the conditional SOL_CODECVT support and deprecating support for GCC 4.x.x, Clang 3.5.x, and Clang 3.6.x in releases past sol2 v2.17.5
+``std::(w)string(u16/u32)`` are assumed to be in the platform's native wide (for ``wstring``) or unicode format. Lua canonically stores its string literals as utf8 and embraces utf8, albeit its storage is simply a sequence of bytes that are also null-terminated (it is also counted and the size is kept around, so embedded nulls can be used in the string). Therefore, if you need to interact with the unicode or wide alternatives of strings, runtime conversions are performed from the (assumed) utf8 string data into other forms. These conversions check for well-formed UTF, and will replace ill-formed characters with the unicode replacement codepoint, 0xFFFD.
+
+Note that we cannot give you a ``string_view`` to utf16 or utf32 strings: Lua does not hold them in memory this way. You can perhaps do your own customization to provide for this if need be. Remember that Lua stores a counted sequence of bytes: serializing your string as bytes and pushing a string type into Lua's stack will work, though do not except any complex string routines or printing to behave nicely with your code.
+
+.. _file an issue report: https://github.com/ThePhD/sol2/issues

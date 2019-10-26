@@ -1,5 +1,5 @@
-proxy, (protected\_)function_result - proxy_base derivatives
-============================================================
+proxy, (protected\unsafe)_function_result - proxy_base derivatives
+==================================================================
 *``table[x]`` and ``function(...)`` conversion struct*
 
 
@@ -13,7 +13,7 @@ proxy, (protected\_)function_result - proxy_base derivatives
 
 	struct stack_proxy: proxy_base<...>;
 
-	struct function_result : proxy_base<...>;
+	struct unsafe_function_result : proxy_base<...>;
 
 	struct protected_function_result: proxy_base<...>;
 
@@ -25,55 +25,23 @@ These classes provide implicit assignment operator ``operator=`` (for ``set``) a
 proxy
 -----
 
-``proxy`` is returned by lookups into :doc:`sol::table<table>` and table-like entities. Because it is templated on key and table type, it would be hard to spell: you can capture it using the word ``auto`` if you feel like you need to carry it around for some reason before using it. ``proxy`` evaluates its arguments lazily, when you finally call ``get`` or ``set`` on it. Here are some examples given the following lua script. 
+``proxy`` is returned by lookups into :doc:`sol::table<table>` and table-like entities. Because it is templated on key and table type, it would be hard to spell: you can capture it using the word ``auto`` if you feel like you need to carry it around for some reason before using it. ``proxy`` evaluates its arguments lazily, when you finally call ``get`` or ``set`` on it. Here are some examples given the following lua script:
 
-.. code-block:: lua
+.. literalinclude:: ../../../examples/source/table_proxy.cpp
 	:linenos:
-	:caption: lua nested table script
-
-	bark = { 
-		woof = {
-			[2] = "arf!" 
-		} 
-	}
-
+	:lines: 11-15
 
 After loading that file in or putting it in a string and reading the string directly in lua (see :doc:`state`), you can start kicking around with it in C++ like so:
 
-.. code-block:: c++
+.. literalinclude:: ../../../examples/source/table_proxy.cpp
 	:linenos:
+	:lines: 1-8,18-40
 
-	sol::state lua;
+We don't recommend using ``proxy`` lazy evaluation the above to be used across classes or between function: it's more of something you can do to save a reference to a value you like, call a script or run a lua function, and then get it afterwards. You can also set functions (and function objects) this way, and retrieve them as well:
 
-	// produces proxy, implicitly converts to std::string, quietly destroys proxy
-	std::string x = lua["bark"]["woof"][2];
-
-
-``proxy`` lazy evaluation:
-
-.. code-block:: c++
+.. literalinclude:: ../../../examples/source/table_proxy.cpp
 	:linenos:
-	:caption: multi-get
-
-	auto x = lua["bark"];
-	auto y = x["woof"];
-	auto z = x[2];
-	// retrivies value inside of lua table above
-	std::string value = z; // "arf!"
-	// Can change the value later...
-	z = 20;
-	// Yay, lazy-evaluation!
-	int changed_value = z; // now it's 20!
-
-
-We don't recommend the above to be used across classes or between function: it's more of something you can do to save a reference to a value you like, call a script or run a lua function, and then get it afterwards. You can also set functions (and function objects :ref:`*<note 1>`) this way, and retrieve them as well.
-
-.. code-block:: c++
-	:linenos:
-
-	lua["bark_value"] = 24;
-	lua["chase_tail"] = floof::chase_tail; // chase_tail is a free function
-
+	:lines: 41-
 
 members
 -------
@@ -110,6 +78,17 @@ Gets the value associated with the keys and converts it to the type ``T``.
 
 Gets the value associated with the keys and converts it to the type ``T``. If it is not of the proper type, it will return a ``sol::nullopt`` instead.
 
+.. code-block:: c++
+	:caption: function: [overloaded] optionally get or create a value
+	:name: regular-get-or-create
+
+	template <typename T>
+	decltype(auto) get_or_create();
+	template <typename T, typename Otherwise>
+	decltype(auto) get_or_create( Otherwise&& other );
+
+Gets the value associated with the keys if it exists. If it does not, it will set it with the value and return the result.
+
 ``operator[]`` proxy-only members
 ---------------------------------
 
@@ -133,7 +112,7 @@ Returns whether this proxy actually refers to a valid object. It uses :ref:`sol:
 	template <typename Fx>
 	proxy& operator=( Fx&& function );
 
-Sets the value associated with the keys the proxy was generated with to ``value``. If this is a function, calls ``set_function``. If it is not, just calls ``set``. Does not exist on :ref:`function_result<function-result>` or :ref:`protected_function_result<protected-function-result>`. See :ref:`note<note 1>` for caveats.
+Sets the value associated with the keys the proxy was generated with to ``value``. If this is a function, calls ``set_function``. If it is not, just calls ``set``. Does not exist on :ref:`unsage_function_result<unsafe-function-result>` or :ref:`protected_function_result<protected-function-result>`.
 
 .. code-block:: c++
 	:caption: function: set a callable
@@ -142,7 +121,7 @@ Sets the value associated with the keys the proxy was generated with to ``value`
 	template <typename Fx>
 	proxy& set_function( Fx&& fx );
 
-Sets the value associated with the keys the proxy was generated with to a function ``fx``. Does not exist on :ref:`function_result<function-result>` or :ref:`protected_function_result<protected-function-result>`.
+Sets the value associated with the keys the proxy was generated with to a function ``fx``. Does not exist on :ref:`unsafe_function_result<unsafe-function-result>` or :ref:`protected_function_result<protected-function-result>`.
 
 
 .. code-block:: c++
@@ -152,50 +131,45 @@ Sets the value associated with the keys the proxy was generated with to a functi
 	template <typename T>
 	proxy& set( T&& value );
 
-Sets the value associated with the keys the proxy was generated with to ``value``. Does not exist on :ref:`function_result<function-result>` or :ref:`protected_function_result<protected-function-result>`.
+Sets the value associated with the keys the proxy was generated with to ``value``. Does not exist on :ref:`unsafe_function_result<unsafe-function-result>` or :ref:`protected_function_result<protected-function-result>`.
+
+.. _stack-proxy:
 
 stack_proxy
 -----------
 
 ``sol::stack_proxy`` is what gets returned by :doc:`sol::variadic_args<variadic_args>` and other parts of the framework. It is similar to proxy, but is meant to alias a stack index and not a named variable.
 
-.. _function-result:
+.. _unsafe-function-result:
 
-function_result
----------------
+unsafe_function_result
+----------------------
 
-``function_result`` is a temporary-only, intermediate-only implicit conversion worker for when :doc:`function<function>` is called. It is *NOT* meant to be stored or captured with ``auto``. It provides fast access to the desired underlying value. It does not implement ``set`` / ``set_function`` / templated ``operator=``, as is present on :ref:`proxy<proxy>`.
+``unsafe_function_result`` is a temporary-only, intermediate-only implicit conversion worker for when :doc:`function<function>` is called. It is *NOT* meant to be stored or captured with ``auto``. It provides fast access to the desired underlying value. It does not implement ``set`` / ``set_function`` / templated ``operator=``, as is present on :ref:`proxy<proxy>`.
 
+
+This type does, however, allow access to multiple underlying values. Use ``result.get<Type>(index_offset)`` to retrieve an object of ``Type`` at an offset of ``index_offset`` in the results. Offset is 0 based. Not specifying an argument defaults the value to 0.
+
+``unsafe_function_result`` also has ``begin()`` and ``end()`` functions that return (almost) "random-acess" iterators. These return a proxy type that can be implicitly converted to :ref:`stack_proxy<stack-proxy>`.
 
 .. _protected-function-result:
 
 protected_function_result
 -------------------------
 
-``protected_function_result`` is a nicer version of ``function_result`` that can be used to detect errors. Its gives safe access to the desired underlying value. It does not implement ``set`` / ``set_function`` / templated ``operator=`` as is present on :ref:`proxy<proxy>`.
+``protected_function_result`` is a nicer version of ``unsafe_function_result`` that can be used to detect errors. Its gives safe access to the desired underlying value. It does not implement ``set`` / ``set_function`` / templated ``operator=`` as is present on :ref:`proxy<proxy>`.
 
+
+This type does, however, allow access to multiple underlying values. Use ``result.get<Type>(index_offset)`` to retrieve an object of ``Type`` at an offset of ``index_offset`` in the results. Offset is 0 based. Not specifying an argument defaults the value to 0.
+
+``unsafe_function_result`` also has ``begin()`` and ``end()`` functions that return (almost) "random-acess" iterators. These return a proxy type that can be implicitly converted to :ref:`stack_proxy<stack-proxy>`.
 
 .. _note 1:
 
 on function objects and proxies
 -------------------------------
 
-Consider the following:
+.. note::
 
-.. code-block:: cpp
-	:linenos:
-	:caption: Note 1 Case
+	As of recent versions of sol3 (2.18.2 and above), this is no longer an issue, as even bound classes will have any detectable function call operator automatically bound to the object, to allow this to work without having to use ``.set`` or ``.set_function``. The note here is kept for posterity and information for older versions. There are only some small caveats, see: :ref:`this note here<binding-callable-objects>`.
 
-	struct doge {
-		int bark;
-
-		void operator()() {
-			bark += 1;
-		}
-	};
-
-	sol::state lua;
-	lua["object"] = doge{}; // bind constructed doge to "object"
-	// but it binds as a function
-
-When you use the ``lua["object"] = doge{};`` from above, keep in mind that Sol detects if this is a function *callable with any kind of arguments*. Since ``doge`` has overriden ``return_type operator()( argument_types... )`` on itself, it results in satisfying the ``requires`` constraint from above. This means that if you have a user-defined type you want to bind as a :doc:`userdata with usertype semantics<usertype>` with this syntax, it might get bound as a function and not as a user-defined type (d'oh!). use ``lua["object"].set(doge)`` directly to avoid this, or ``lua["object"].set_function(doge{})`` to perform this explicitly.

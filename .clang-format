@@ -1,9 +1,31 @@
+# # # # sol3
+# The MIT License (MIT)
+# 
+# Copyright (c) 2013-2019 Rapptz, ThePhD, and contributors
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 ---
 BasedOnStyle: WebKit
 IndentWidth: 5
 TabWidth: 5
 ContinuationIndentWidth: 5
-UseTab: Always
+UseTab: ForIndentation
 
 # Namespaces
 NamespaceIndentation: All
@@ -11,7 +33,7 @@ CompactNamespaces: true
 FixNamespaceComments: true
 
 # Overall Alignment
-ColumnLimit: 0
+ColumnLimit: 160
 AlignAfterOpenBracket: DontAlign # uses ContinuationIndentWidth for this instead
 AccessModifierOffset: -5 # do not push public: or private: around
 #AlignConsecutiveAssignments: true # affects more than what's expected: do not use
@@ -29,7 +51,7 @@ ReflowComments: true
 
 # Macros
 AlignEscapedNewlines: Left
-IndentPPDirectives: None
+#IndentPPDirectives: None
 
 # Functions
 AllowShortFunctionsOnASingleLine: None
@@ -37,7 +59,7 @@ AlwaysBreakAfterReturnType: None
 BreakConstructorInitializers: BeforeComma
 ConstructorInitializerIndentWidth: 0
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
-BinPackArguments: true
+BinPackArguments: false
 BinPackParameters: true
 
 # Classes

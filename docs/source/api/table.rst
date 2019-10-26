@@ -11,11 +11,15 @@ table
 	typedef table_core<false> table;
 	typedef table_core<true> global_table;
 
-``sol::table`` is an extremely efficient manipulator of state that brings most of the magic of the Sol abstraction. Capable of doing multiple sets at once, multiple gets into a ``std::tuple``, being indexed into using ``[key]`` syntax and setting keys with a similar syntax (see: :doc:`here<proxy>`), ``sol::table`` is the corner of the interaction between Lua and C++.
+	class lua_table;
+
+``sol::table`` is an extremely efficient manipulator of state that brings most of the magic of the sol abstraction. Capable of doing multiple sets at once, multiple gets into a ``std::tuple``, being indexed into using ``[key]`` syntax and setting keys with a similar syntax (see: :doc:`here<proxy>`), ``sol::table`` is the corner of the interaction between Lua and C++.
 
 There are two kinds of tables: the global table and non-global tables: however, both have the exact same interface and all ``sol::global_table`` s are convertible to regular ``sol::table`` s.
 
-Tables are the core of Lua, and they are very much the core of Sol.
+Tables are the core of Lua, and they are very much the core of sol.
+
+``sol::lua_table`` is specifically useful for specifying you want **exactly** a Lua table, and not something that can masquerade like a table (e.g., a userdata with a metatable that has overriden `__index` and `__new_index` fields).
 
 
 members
@@ -48,7 +52,9 @@ The first takes a table from the Lua stack at the specified index and allows a p
 
 These functions retrieve items from the table. The first one (``get``) can pull out *multiple* values, 1 for each key value passed into the function. In the case of multiple return values, it is returned in a ``std::tuple<Args...>``. It is similar to doing ``return table["a"], table["b"], table["c"]``. Because it returns a ``std::tuple``, you can use ``std::tie``/``std::make_tuple`` on a multi-get to retrieve all of the necessary variables. The second one (``traverse_get``) pulls out a *single* value,	using each successive key provided to do another lookup into the last. It is similar to doing ``x = table["a"]["b"]["c"][...]``.
 
-If the keys within nested queries try to traverse into a table that doesn't exist, the second lookup into the nil-returned variable and belong will cause a panic to be fired by the lua C API. If you need to check for keys, check with ``auto x = table.get<sol::optional<int>>( std::tie("a", "b", "c" ) );``, and then use the :doc:`optional<optional>` interface to check for errors. As a short-hand, easy method for returning a default if a value doesn't exist, you can use ``get_or`` instead.
+If the keys within nested queries try to traverse into a table that doesn't exist, it will first pull out a ``nil`` value. If there are further lookups past a key that do not exist, the additional lookups into the nil-returned variable will cause a panic to be fired by the lua C API. If you need to check for keys, check with ``auto x = table.get<sol::optional<int>>( std::tie("a", "b", "c" ) );``, and then use the :doc:`optional<optional>` interface to check for errors. As a short-hand, easy method for returning a default if a value doesn't exist, you can use ``get_or`` instead.
+
+This function does not create tables where they do not exist.
 
 .. code-block:: cpp
 	:caption: function: raw get / traversing raw get
@@ -67,6 +73,8 @@ If the keys within nested queries try to traverse into a table that doesn't exis
 	decltype(auto) raw_get_or(Key&& key, D&& otherwise) const;
 
 
+Similar to :ref:`get<get-value>`, but it does so "raw" (ignoring metamethods on the table's metatable).
+
 .. code-block:: cpp
 	:caption: function: set / traversing set
 	:name: set-value
@@ -79,6 +87,12 @@ If the keys within nested queries try to traverse into a table that doesn't exis
 
 These functions set items into the table. The first one (``set``) can set  *multiple* values, in the form ``key_a, value_a, key_b, value_b, ...``. It is similar to ``table[key_a] = value_a; table[key_b] = value_b, ...``. The second one (``traverse_set``) sets a *single* value, using all but the last argument as keys to do another lookup into the value retrieved prior to it. It is equivalent to ``table[key_a][key_b][...] = value;``.
 
+If the keys within nested queries try to traverse into a table that doesn't exist, it will first pull out a ``nil`` value. If there are further lookups past a key that do not exist, the additional lookups into the nil-returned variable will cause a panic to be fired by the lua C API.
+
+Please note how callables and lambdas are serialized, as there may be issues on GCC-based implementations. See this :ref:`note here<lambda-registry>`.
+
+This function does not create tables where they do not exist.
+
 .. code-block:: cpp
 	:caption: function: raw set / traversing raw set
 	:name: raw-set-value
@@ -90,6 +104,8 @@ These functions set items into the table. The first one (``set``) can set  *mult
 	table& traverse_raw_set(Args&&... args);
 
 Similar to :ref:`set<set-value>`, but it does so "raw" (ignoring metamethods on the table's metatable).
+
+Please note how callables and lambdas are serialized, as there may be issues on GCC-based implementations. See this :ref:`note here<lambda-registry>`.
 
 .. note::
 
@@ -134,19 +150,6 @@ This function returns the size of a table. It is only well-defined in the case o
 	table& new_usertype(const std::string& name, constructors<CArgs...> ctor, Args&&... args);
 
 This class of functions creates a new :doc:`usertype<usertype>` with the specified arguments, providing a few extra details for constructors. After creating a usertype with the specified argument, it passes it to :ref:`set_usertype<set_usertype>`.
-	
-.. code-block:: cpp
-	:caption: function: setting a simple usertype
-	:name: new-simple-usertype
-
-	template<typename Class, typename... Args>
-	table& new_simple_usertype(const std::string& name, Args&&... args);
-	template<typename Class, typename CTor0, typename... CTor, typename... Args>
-	table& new_simple_usertype(const std::string& name, Args&&... args);
-	template<typename Class, typename... CArgs, typename... Args>
-	table& new_simple_usertype(const std::string& name, constructors<CArgs...> ctor, Args&&... args);
-
-This class of functions creates a new :doc:`simple usertype<simple_usertype>` with the specified arguments, providing a few extra details for constructors and passing the ``sol::simple`` tag as well. After creating a usertype with the specified argument, it passes it to :ref:`set_usertype<set_usertype>`.
 	
 .. code-block:: cpp
 	:caption: function: creating an enum
@@ -211,6 +214,8 @@ A functional ``for_each`` loop that calls the desired function. The passed in fu
 	proxy<const table&, T> operator[](T&& key) const;
 
 Generates a :doc:`proxy<proxy>` that is templated on the table type and the key type. Enables lookup of items and their implicit conversion to a desired type. Lookup is done lazily.
+
+Please note how callables and lambdas are serialized, as there may be issues on GCC-based implementations. See this :ref:`note here<lambda-registry>`.
 
 .. code-block:: cpp
 	:caption: function: create a table with defaults

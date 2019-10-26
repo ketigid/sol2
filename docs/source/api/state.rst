@@ -17,12 +17,20 @@ The majority of the members between ``state_view`` and :doc:`sol::table<table>` 
 
 .. _state-automatic-handlers:
 
-One last thing you should understand: constructing a ``sol::state`` does a few things behind-the-scenes for you, mostly to ensure compatibility. They are as follows:
+``sol::state`` automatic handlers
+---------------------------------
 
-* set a default panic handler with ``state_view::set_panic``
+One last thing you should understand: constructing a ``sol::state`` does a few things behind-the-scenes for you, mostly to ensure compatibility and good error handler/error handling. The function it uses to do this is ``set_default_state``. They are as follows:
+
+* set a default panic handler with ``state_view::set_panic``/``lua_atpnic``
 * set a default ``sol::protected_function`` handler with ``sol::protected_function::set_default_handler``, using a ``sol::reference`` to ``&sol::detail::default_traceback_error_handler`` as the default handler function
+* set a default exception handler to ``&sol::detail::default_exception_handler``
 * register the state as the main thread (only does something for Lua 5.1, which does not have a way to get the main thread) using ``sol::stack::register_main_thread(L)``
 * register the LuaJIT C function exception handler with ``stack::luajit_exception_handler(L)``
+
+You can read up on the various panic and exception handlers on the :ref:`exceptions page<lua-handlers>`.
+
+sol::state_view does none of these things for you. If you want to make sure your self-created or self-managed state has the same properties, please apply this function once to the state. Please note that it will override your panic handler and, if using LuaJIT, your LuaJIT C function handler.
 
 .. warning::
 
@@ -88,32 +96,13 @@ If you need safety, please use the version of these functions with ``safe`` (suc
 
 These functions run the desired blob of either code that is in a string, or code that comes from a filename, on the ``lua_State*``. It will not run isolated: any scripts or code run will affect code in the ``lua_State*`` the object uses as well (unless ``local`` is applied to a variable declaration, as specified by the Lua language). Code ran in this fashion is not isolated. If you need isolation, consider creating a new state or traditional Lua sandboxing techniques.
 
-If your script returns a value, you can capture it from the returned :ref:`sol::function_result<function-result>`/:ref:`sol::protected_function_result<protected-function-result>`. Note that the plain versions that do not take an environment or a callback function assume that the contents internally not only loaded properly but ran to completion without errors, for the sake of simplicity and performance.
+If your script returns a value, you can capture it from the returned :ref:`sol::unsafe_function_result<unsafe-function-result>`/:ref:`sol::protected_function_result<protected-function-result>`. Note that the plain versions that do not take an environment or a callback function assume that the contents internally not only loaded properly but ran to completion without errors, for the sake of simplicity and performance.
 
 To handle errors when using the second overload, provide a callable function/object that takes a ``lua_State*`` as its first argument and a ``sol::protected_function_result`` as its second argument. ``sol::script_default_on_error`` and ``sol::script_pass_on_error`` are 2 functions provided by sol that will either generate a traceback error to return / throw (if throwing is allowed); or, pass the error on through and return it to the user (respectively). An example of having your:
 
-.. code-block:: cpp
-	:caption: running code safely
+.. literalinclude:: ../../../examples/source/docs/state_script_safe.cpp
+	:linenos:
 	:name: state-script-safe
-
-	int main () {
-		sol::state lua;
-		// uses sol::script_default_on_error, which either panics or throws, 
-		// depending on your configuration and compiler settings
-		auto result1 = lua.safe_script("bad.code");
-
-		// a custom handler that you write yourself
-		// is only called when an error happens with loading or running the script
-		auto result2 = lua.safe_script("123 bad.code", [](lua_State* L, sol::protected_function_result pfr) {
-			// pfr will contain things that went wrong, for either loading or executing the script
-			// the user can do whatever they like here, including throw. Otherwise...
-			sol::error err = pfr;
-			std::cout << err.what() << std::endl;
-
-			// ... they need to return the protected_function_result
-			return pfr;
-		});
-	}
 
 You can also pass a :doc:`sol::environment<environment>` to ``script``/``script_file`` to have the script have sandboxed / contained in a way inside of a state. This is useful for runnig multiple different "perspectives" or "views" on the same state, and even has fallback support. See the :doc:`sol::environment<environment>` documentation for more details. 
 
