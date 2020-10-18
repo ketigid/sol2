@@ -2,7 +2,7 @@
 
 // The MIT License (MIT)
 
-// Copyright (c) 2013-2019 Rapptz, ThePhD and contributors
+// Copyright (c) 2013-2020 Rapptz, ThePhD and contributors
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -29,10 +29,8 @@
 #include <map>
 #include <thread>
 #include <mutex>
-#if defined(SOL_CXX17_FEATURES) && SOL_CXX17_FEATURES
 #include <string_view>
 #include <variant>
-#endif // C++17
 
 struct int_entry {
 	int value;
@@ -73,17 +71,18 @@ void lua_value_construct_race() {
 }
 
 TEST_CASE("lua_value/nested", "make nested values can be put in lua_value properly") {
-#if defined(SOL_STD_VARIANT) && SOL_STD_VARIANT
+#if SOL_IS_ON(SOL_STD_VARIANT_I_)
 	using mixed_table_entry = std::variant<int, int_entry, std::string>;
 	using nested_entry = std::variant<int, int_entry, std::string, std::vector<mixed_table_entry>>;
 
 	const std::vector<std::variant<int, int_entry>> mixed_table_truth = { 1, int_entry(2), 3, int_entry(4), 5 };
-	const std::vector<nested_entry> mixed_nested_table_truth = { 1, int_entry(2), 3, int_entry(4), std::vector<mixed_table_entry>{ 5, 6, int_entry(7), "8" } };
+	const std::vector<nested_entry> mixed_nested_table_truth
+	     = { 1, int_entry(2), 3, int_entry(4), std::vector<mixed_table_entry> { 5, 6, int_entry(7), "8" } };
 
 	sol::state lua;
 
-	sol::lua_value lv_mixed_table(lua, sol::array_value{ 1, int_entry(2), 3, int_entry(4), 5 });
-	sol::lua_value lv_mixed_nested_table(lua, sol::array_value{ 1, int_entry(2), 3, int_entry(4), sol::array_value{ 5, 6, int_entry(7), "8" } });
+	sol::lua_value lv_mixed_table(lua, sol::array_value { 1, int_entry(2), 3, int_entry(4), 5 });
+	sol::lua_value lv_mixed_nested_table(lua, sol::array_value { 1, int_entry(2), 3, int_entry(4), sol::array_value { 5, 6, int_entry(7), "8" } });
 
 	REQUIRE(lv_mixed_table.is<sol::table>());
 	REQUIRE(lv_mixed_nested_table.is<sol::table>());
@@ -145,17 +144,18 @@ TEST_CASE("lua_value/nested", "make nested values can be put in lua_value proper
 }
 
 TEST_CASE("lua_value/nested key value", "make nested values (key value) can be put in lua_value properly") {
-#if defined(SOL_STD_VARIANT) && SOL_STD_VARIANT
+#if SOL_IS_ON(SOL_STD_VARIANT_I_)
 	using mixed_table_entry = std::variant<int, int_entry, std::string>;
 	using nested_entry = std::variant<int, int_entry, std::string, std::vector<mixed_table_entry>>;
 
 	const std::vector<std::variant<int, int_entry>> mixed_table_truth = { 1, int_entry(2), 3, int_entry(4), 5 };
-	const std::vector<nested_entry> mixed_nested_table_truth = { 1, int_entry(2), 3, int_entry(4), std::vector<mixed_table_entry>{ 5, 6, int_entry(7), "8" } };
+	const std::vector<nested_entry> mixed_nested_table_truth
+	     = { 1, int_entry(2), 3, int_entry(4), std::vector<mixed_table_entry> { 5, 6, int_entry(7), "8" } };
 
 	sol::state lua;
 
-	sol::lua_value lv_mixed_table(lua, sol::array_value{ 1, int_entry(2), 3, int_entry(4), 5 });
-	sol::lua_value lv_mixed_nested_table(lua, sol::array_value{ 1, int_entry(2), 3, int_entry(4), sol::array_value{ 5, 6, int_entry(7), "8" } });
+	sol::lua_value lv_mixed_table(lua, sol::array_value { 1, int_entry(2), 3, int_entry(4), 5 });
+	sol::lua_value lv_mixed_nested_table(lua, sol::array_value { 1, int_entry(2), 3, int_entry(4), sol::array_value { 5, 6, int_entry(7), "8" } });
 
 	REQUIRE(lv_mixed_table.is<sol::table>());
 	REQUIRE(lv_mixed_nested_table.is<sol::table>());
@@ -221,7 +221,7 @@ TEST_CASE("lua_value/basic types", "make sure we can stick values and nested val
 
 	const int_entry userdata_truth = int_entry(3);
 	const std::vector<int> int_table_truth = { 1, 2, 3, 4, 5 };
-	const std::map<int, int> int_map_truth = { {1, 2}, {3, 4}, {5, 6} };
+	const std::map<int, int> int_map_truth = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
 
 	sol::lua_value lv_int(lua, 1);
 	sol::lua_value lv_double(lua, 2.0);
@@ -231,7 +231,7 @@ TEST_CASE("lua_value/basic types", "make sure we can stick values and nested val
 	sol::lua_value lv_nil(lua, sol::lua_nil);
 	sol::lua_value lv_userdata(lua, int_entry(3));
 	sol::lua_value lv_int_table(lua, { 1, 2, 3, 4, 5 });
-	sol::lua_value lv_int_map(lua, { {1, 2}, {3, 4}, {5, 6} });
+	sol::lua_value lv_int_map(lua, { { 1, 2 }, { 3, 4 }, { 5, 6 } });
 	REQUIRE(lv_int.is<int>());
 	REQUIRE(lv_double.is<double>());
 	REQUIRE(lv_string.is<std::string>());

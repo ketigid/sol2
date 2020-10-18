@@ -1,7 +1,7 @@
 # # # # sol3
 # The MIT License (MIT)
 #
-# Copyright (c) 2013-2019 Rapptz, ThePhD, and contributors
+# Copyright (c) 2013-2020 Rapptz, ThePhD, and contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in
@@ -56,6 +56,8 @@ function(make_tolua_interop_example target_library example_suffix)
 		add_test(NAME ${example_name} COMMAND ${example_name})
 	endif()
 endfunction()
+
+MESSAGE(STATUS ${SOL2_LUA_VERSION})
 
 if (SOL2_INTEROP_EXAMPLES)
 	make_tolua_interop_example(sol2::sol2 "")

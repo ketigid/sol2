@@ -1,7 +1,7 @@
 # # # # sol3
 # The MIT License (MIT)
 # 
-# Copyright (c) 2013-2019 Rapptz, ThePhD, and contributors
+# Copyright (c) 2013-2020 Rapptz, ThePhD, and contributors
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in
@@ -78,10 +78,7 @@ function (MAKE_EXAMPLE example_source_file example_suffix target_sol)
 	
 	if (MSVC)
 		target_compile_options(${example_name}
-			PRIVATE /std:c++latest /EHsc "$<$<CONFIG:Debug>:/MDd>"
-			"$<$<CONFIG:Release>:/MD>"
-			"$<$<CONFIG:RelWithDebInfo>:/MD>"
-			"$<$<CONFIG:MinSizeRel>:/MD>")
+			PRIVATE /std:c++latest /EHsc)
 		target_compile_definitions(${example_name}
 			PRIVATE UNICODE _UNICODE 
 			_CRT_SECURE_NO_WARNINGS _CRT_SECURE_NO_DEPRECATE )

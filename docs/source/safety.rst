@@ -89,18 +89,41 @@ Feature Config
 	* Includes ``<iostream>`` and prints all exceptions and errors to ``std::cerr``, for you to see
 	* **Not** turned on by default under any settings: *this MUST be turned on manually*
 
+``SOL_GET_FUNCTION_POINTERS_UNSAFE`` triggers the following change:
+	* Allows function pointers serialized into Lua as a callable to be retrieved back from Lua in a semi-proper manner
+	* **This is under NO circumstances type safe**
+		- It **WILL** break ``sol::overload`` type checking and will not discriminate properly between function types
+		- It **WILL** happily let you retrieve an ``int(*)(int, int int)`` from a ``void(*)()`` function pointer, and shatter your runtime if you call it
+	* This is an **advanced, experimental feature** for experts only and requires the user has **perfect type safety** in both C++ and Lua
+	* **Not** turned on by default under any settings: *this MUST be turned on manually*
+
 ``SOL_CONTAINERS_START`` triggers the following change:
 	* If defined and **is an integral value**, is used to adjust the container start value
 	* Applies to C++ containers **only** (not Lua tables or algorithms)
 	* Defaults to 1 (containers in Lua count from 1)
 
-``SOL_ENABLE_INTEROP`` triggers the following change:
+``SOL_USE_INTEROP`` triggers the following change:
 	* Allows the use of ``extensible<T>`` to be used with ``userdata_checker`` and ``userdata_getter`` to retrieve non-sol usertypes
 		- Particularly enables non-sol usertypes to be used in overloads
-		- See the :ref:`stack dcoumentation<userdata-interop>` for details
+		- See the :ref:`stack documentation<userdata-interop>` for details
 	* May come with a slight performance penalty: only recommended for those stuck with non-sol libraries that still need to leverage some of sol's power
 	* **Not** turned on by default under any settings: *this MUST be turned on manually*
 	
+``SOL_DEFAULT_AUTOMAGICAL_USERTYPES`` triggers the following change:
+	* Either turns on (``!= 0``) or turns off (``== 0``) automagical usertype detection by default.
+	* Automagical usertypes search for specific C++ conventions to define common methods for the end-user.
+	* Some automagical methods might cause huge compiler errors, and some people have code bases with different conventions.
+	* Turned on by default. This *must be turned off manually*.
+
+``SOL_NO_THREAD_LOCAL`` triggers the following change:
+	* If this is turned on, simply removes all usages of the ``thread_local`` keyword in sol2.
+	* This is useful for lower versions of iOS and Android, which do not have threading capabilities at all and so the use of the keyword provides no additional guarantees. 
+	* **Not** turned on by default under any settings: *this MUST be turned on manually*
+
+``SOL_ID_SIZE`` triggers the following change:
+	* If this is defined to a numeric value, it uses that numeric value for the number of bytes of input to be put into the error message blurb in standard tracebacks and ``chunkname`` descriptions for ``.script``/``.script_file`` usage.
+	* Defaults to the ``LUA_ID_SIZE`` macro if defined, or some basic internal value like 2048.
+
 .. _config-memory:
 
 Memory Config
@@ -119,6 +142,7 @@ Linker Config
 
 ``SOL_USING_CXX_LUA`` triggers the following changes:
 	* Lua includes are no longer wrapped in ``extern "C" {}`` blocks
+	* ``SOL_NO_LUA_HPP`` takes less precedence if this is explicitly turned on
 	* Turns on ``SOL_EXCEPTIONS_SAFE_PROPAGATION`` automatically for you
 	* Only use this if you know you've built your LuaJIT with the C++-specific invocations of your compiler (Lua by default builds as C code and is not distributed as a C++ library, but a C one with C symbols)
 

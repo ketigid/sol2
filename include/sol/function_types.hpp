@@ -2,7 +2,7 @@
 
 // The MIT License (MIT)
 
-// Copyright (c) 2013-2019 Rapptz, ThePhD and contributors
+// Copyright (c) 2013-2020 Rapptz, ThePhD and contributors
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -24,13 +24,13 @@
 #ifndef SOL_FUNCTION_TYPES_HPP
 #define SOL_FUNCTION_TYPES_HPP
 
-#include "function_types_core.hpp"
-#include "function_types_templated.hpp"
-#include "function_types_stateless.hpp"
-#include "function_types_stateful.hpp"
-#include "function_types_overloaded.hpp"
-#include "resolve.hpp"
-#include "call.hpp"
+#include <sol/function_types_core.hpp>
+#include <sol/function_types_templated.hpp>
+#include <sol/function_types_stateless.hpp>
+#include <sol/function_types_stateful.hpp>
+#include <sol/function_types_overloaded.hpp>
+#include <sol/resolve.hpp>
+#include <sol/call.hpp>
 
 namespace sol {
 	namespace function_detail {
@@ -39,7 +39,7 @@ namespace sol {
 			using type = T;
 		};
 
-		struct call_indicator {};
+		struct call_indicator { };
 
 		template <bool yielding>
 		int lua_c_wrapper(lua_State* L) {
@@ -65,14 +65,15 @@ namespace sol {
 			}
 		}
 
-		struct c_function_invocation {};
+		struct c_function_invocation { };
 
 		template <bool is_yielding, typename Fx, typename... Args>
 		void select(lua_State* L, Fx&& fx, Args&&... args);
 
-		template <bool is_yielding, typename Fx, typename... Args>
+		template <bool is_yielding, bool no_trampoline, typename Fx, typename... Args>
 		void select_set_fx(lua_State* L, Args&&... args) {
-			lua_CFunction freefunc = detail::static_trampoline<function_detail::call<meta::unqualified_t<Fx>, 2, is_yielding>>;
+			lua_CFunction freefunc = no_trampoline ? detail::static_trampoline<function_detail::call<meta::unqualified_t<Fx>, 2, is_yielding>>
+			                                       : function_detail::call<meta::unqualified_t<Fx>, 2, is_yielding>;
 
 			int upvalues = 0;
 			upvalues += stack::push(L, nullptr);
@@ -90,8 +91,8 @@ namespace sol {
 				select<is_yielding>(L, std::move(fxptr), std::forward<Args>(args)...);
 			}
 			else {
-				using F = function_detail::functor_function<dFx, is_yielding, true>;
-				select_set_fx<false, F>(L, std::forward<Fx>(fx), std::forward<Args>(args)...);
+				using F = function_detail::functor_function<dFx, false, true>;
+				select_set_fx<is_yielding, false, F>(L, std::forward<Fx>(fx), std::forward<Args>(args)...);
 			}
 		}
 
@@ -140,14 +141,14 @@ namespace sol {
 				else {
 					using clean_fx = std::remove_pointer_t<std::decay_t<Fx>>;
 					using F = function_detail::member_variable<Tu, clean_fx, is_yielding>;
-					select_set_fx<false, F>(L, std::forward<Fx>(fx), std::forward<Args>(args)...);
+					select_set_fx<false, false, F>(L, std::forward<Fx>(fx), std::forward<Args>(args)...);
 				}
 			}
 			else {
 				using C = typename meta::bind_traits<uFx>::object_type;
 				using clean_fx = std::remove_pointer_t<std::decay_t<Fx>>;
 				using F = function_detail::member_variable<C, clean_fx, is_yielding>;
-				select_set_fx<false, F>(L, std::forward<Fx>(fx), std::forward<Args>(args)...);
+				select_set_fx<false, false, F>(L, std::forward<Fx>(fx), std::forward<Args>(args)...);
 			}
 		}
 
@@ -179,7 +180,7 @@ namespace sol {
 				}
 				else {
 					using F = function_detail::member_function<Tu, dFx, is_yielding>;
-					select_set_fx<false, F>(L, std::forward<Fx>(fx), std::forward<T>(obj), std::forward<Args>(args)...);
+					select_set_fx<false, false, F>(L, std::forward<Fx>(fx), std::forward<T>(obj), std::forward<Args>(args)...);
 				}
 			}
 		}
@@ -212,7 +213,7 @@ namespace sol {
 				int upvalues = 0;
 				upvalues += stack::push(L, nullptr);
 				upvalues += stack::push(L, std::forward<Fx>(fx));
-#if defined(SOL_NOEXCEPT_FUNCTION_TYPE) && SOL_NOEXCEPT_FUNCTION_TYPE
+#if SOL_IS_ON(SOL_USE_NOEXCEPT_FUNCTION_TYPE_I_)
 				if constexpr (std::is_nothrow_invocable_r_v<int, uFx, lua_State*>) {
 					detail::lua_CFunction_noexcept cf = &lua_c_noexcept_wrapper<is_yielding>;
 					lua_pushcclosure(L, reinterpret_cast<lua_CFunction>(cf), 2);
@@ -270,6 +271,9 @@ namespace sol {
 			static int push(lua_State* L, Arg0&& arg0, Args&&... args) {
 				if constexpr (std::is_same_v<meta::unqualified_t<Arg0>, detail::yield_tag_t>) {
 					push<true>(L, std::forward<Args>(args)...);
+				}
+				else if constexpr (meta::is_specialization_of_v<meta::unqualified_t<Arg0>, yielding_t>) {
+					push<true>(L, std::forward<Arg0>(arg0).func, std::forward<Args>(args)...);
 				}
 				else {
 					push<false>(L, std::forward<Arg0>(arg0), std::forward<Args>(args)...);
@@ -367,7 +371,7 @@ namespace sol {
 		struct unqualified_pusher<Signature,
 		     std::enable_if_t<meta::all<std::is_function<std::remove_pointer_t<Signature>>, meta::neg<std::is_same<Signature, lua_CFunction>>,
 		          meta::neg<std::is_same<Signature, std::remove_pointer_t<lua_CFunction>>>
-#if defined(SOL_NOEXCEPT_FUNCTION_TYPE) && SOL_NOEXCEPT_FUNCTION_TYPE
+#if SOL_IS_ON(SOL_USE_NOEXCEPT_FUNCTION_TYPE_I_)
 		          ,
 		          meta::neg<std::is_same<Signature, detail::lua_CFunction_noexcept>>,
 		          meta::neg<std::is_same<Signature, std::remove_pointer_t<detail::lua_CFunction_noexcept>>>
@@ -384,13 +388,13 @@ namespace sol {
 		struct unqualified_pusher<overload_set<Functions...>> {
 			static int push(lua_State* L, overload_set<Functions...>&& set) {
 				using F = function_detail::overloaded_function<0, Functions...>;
-				function_detail::select_set_fx<false, F>(L, std::move(set.functions));
+				function_detail::select_set_fx<false, false, F>(L, std::move(set.functions));
 				return 1;
 			}
 
 			static int push(lua_State* L, const overload_set<Functions...>& set) {
 				using F = function_detail::overloaded_function<0, Functions...>;
-				function_detail::select_set_fx<false, F>(L, set.functions);
+				function_detail::select_set_fx<false, false, F>(L, set.functions);
 				return 1;
 			}
 		};
@@ -455,25 +459,25 @@ namespace sol {
 		struct unqualified_pusher<factory_wrapper<Functions...>> {
 			static int push(lua_State* L, const factory_wrapper<Functions...>& fw) {
 				using F = function_detail::overloaded_function<0, Functions...>;
-				function_detail::select_set_fx<false, F>(L, fw.functions);
+				function_detail::select_set_fx<false, false, F>(L, fw.functions);
 				return 1;
 			}
 
 			static int push(lua_State* L, factory_wrapper<Functions...>&& fw) {
 				using F = function_detail::overloaded_function<0, Functions...>;
-				function_detail::select_set_fx<false, F>(L, std::move(fw.functions));
+				function_detail::select_set_fx<false, false, F>(L, std::move(fw.functions));
 				return 1;
 			}
 
 			static int push(lua_State* L, const factory_wrapper<Functions...>& fw, function_detail::call_indicator) {
 				using F = function_detail::overloaded_function<1, Functions...>;
-				function_detail::select_set_fx<false, F>(L, fw.functions);
+				function_detail::select_set_fx<false, false, F>(L, fw.functions);
 				return 1;
 			}
 
 			static int push(lua_State* L, factory_wrapper<Functions...>&& fw, function_detail::call_indicator) {
 				using F = function_detail::overloaded_function<1, Functions...>;
-				function_detail::select_set_fx<false, F>(L, std::move(fw.functions));
+				function_detail::select_set_fx<false, false, F>(L, std::move(fw.functions));
 				return 1;
 			}
 		};
@@ -492,7 +496,7 @@ namespace sol {
 
 		template <typename T>
 		struct unqualified_pusher<detail::tagged<T, no_construction>> {
-			static int push(lua_State* L, no_construction) {
+			static int push(lua_State* L, detail::tagged<T, no_construction>) {
 				lua_CFunction cf = &function_detail::no_construction_error;
 				return stack::push(L, cf);
 			}
@@ -675,7 +679,56 @@ namespace sol {
 				}
 			}
 		};
-	} // namespace stack
+
+		namespace stack_detail {
+			template <typename Function, typename Handler>
+			bool check_function_pointer(lua_State* L, int index, Handler&& handler, record& tracking) noexcept {
+#if SOL_IS_ON(SOL_GET_FUNCTION_POINTER_UNSAFE_I_)
+				tracking.use(1);
+				bool success = lua_iscfunction(L, index) == 1;
+				if (success) {
+					// there must be at LEAST 2 upvalues; otherwise, we didn't serialize it.
+					const char* upvalue_name = lua_getupvalue(L, index, 2);
+					lua_pop(L, 1);
+					success = upvalue_name != nullptr;
+				}
+				if (!success) {
+					// expected type, actual type
+					handler(
+					     L, index, type::function, type_of(L, index), "type must be a Lua C Function gotten from a function pointer serialized by sol2");
+				}
+				return success;
+#else
+				return false;
+#endif
+			}
+
+			template <typename Function>
+			Function* get_function_pointer(lua_State* L, int index, record& tracking) noexcept {
+#if SOL_IS_ON(SOL_GET_FUNCTION_POINTER_UNSAFE_I_)
+				tracking.use(1);
+				auto udata = stack::stack_detail::get_as_upvalues_using_function<Function*>(L, index);
+				Function* fx = udata.first;
+				return fx;
+#else
+				static_assert(meta::meta_detail::always_true<Function>::value,
+#if SOL_IS_DEFAULT_OFF(SOL_GET_FUNCTION_POINTER_UNSAFE_I_)
+				     "You are attempting to retrieve a function pointer type. "
+				     "This is inherently unsafe in sol2. In order to do this, you must turn on the "
+				     "SOL_GET_FUNCTION_POINTER_UNSAFE configuration macro, as detailed in the documentation. "
+				     "Please be careful!"
+#else
+				     "You are attempting to retrieve a function pointer type. "
+				     "You explicitly turned off the ability to do this by defining "
+				     "SOL_GET_FUNCTION_POINTER_UNSAFE or similar to be off. "
+				     "Please reconsider this!"
+#endif
+				);
+				return nullptr;
+#endif
+			}
+		} // namespace stack_detail
+	}      // namespace stack
 } // namespace sol
 
 #endif // SOL_FUNCTION_TYPES_HPP

@@ -2,7 +2,7 @@
 
 // The MIT License (MIT)
 
-// Copyright (c) 2013-2019 Rapptz, ThePhD and contributors
+// Copyright (c) 2013-2020 Rapptz, ThePhD and contributors
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -226,7 +226,7 @@ TEST_CASE("inheritance/bad_base-class", "check to make sure bad/unregistered bas
 	struct a {
 		a(sol::this_state ts, sol::this_environment) {
 			lua_State* L = ts;
-			ud = sol::userdata(L, -2);
+			ud = sol::userdata(L, 1);
 		}
 
 
